@@ -113,7 +113,7 @@ func WriteOpenRCScript(script, serviceName string) error {
 func EnableService(serviceName string) error {
 	cmd := exec.Command("rc-update", "add", serviceName, "default")
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to enable service: %w", err)
+		return err
 	}
 
 	return nil

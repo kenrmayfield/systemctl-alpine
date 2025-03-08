@@ -74,7 +74,7 @@ func enableService(serviceName string) error {
 
 		// Enable the service
 		if err := converter.EnableService(openrcName); err != nil {
-			return fmt.Errorf("failed to enable service: %w", err)
+			return err
 		}
 
 		fmt.Printf("Service %s has been enabled\n", openrcName)
@@ -110,7 +110,7 @@ func enableService(serviceName string) error {
 
 	// Enable the service
 	if err := converter.EnableService(openrcName); err != nil {
-		return fmt.Errorf("failed to enable service: %w", err)
+		return err
 	}
 
 	fmt.Printf("Service %s has been enabled\n", openrcName)
