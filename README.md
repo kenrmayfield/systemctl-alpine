@@ -205,11 +205,10 @@ For other commands like `start`, `stop`, etc., it translates them to the appropr
 ## Getting Help
 
 - Open an issue on GitHub with:
-- The command you ran
-- The complete error message
-- Your Alpine Linux version
-- The content of your systemd service file
-
+  - The command you ran
+  - The complete error message
+  - Your Alpine Linux version
+  - The content of your systemd service file
 
 ## Contributing
 
