@@ -141,12 +141,22 @@ Check if a service is enabled
 systemctl is-enabled nginx
 ```
 
-List all services
+List services
 
 ```bash
+# List enabled OpenRC services and all systemd services
 systemctl list
-or
-systemctl ls
+
+# List all services including disabled OpenRC services
+systemctl list --all
+systemctl ls -a
+
+# The output shows service status and origin for converted services
+SERVICE                        STATUS
+nginx                          enabled
+redis                          enabled (from /lib/systemd/system/redis.service)
+mysql                          disabled
+apache2                        disabled (not converted)
 ```
 
 ### Working with Multiple Services
@@ -188,12 +198,25 @@ The tool looks for systemd service files in these locations:
 When you run `systemctl enable some-service`:
 
 1. The tool looks for `some-service.service` in the standard systemd locations
-2. It parses the systemd service file and extracts key configuration
-3. It generates an equivalent OpenRC init script
-4. It installs the script to `/etc/init.d/some-service`
-5. It enables the service using `rc-update add some-service default`
+2. If a systemd service file is found:
+   - It parses the systemd service file and extracts key configuration
+   - It generates an equivalent OpenRC init script
+   - It installs the script to `/etc/init.d/some-service`
+3. If no systemd service file is found but an OpenRC service exists:
+   - It skips the conversion step and just enables the existing OpenRC service
+4. It enables the service using `rc-update add some-service default`
+5. If the `--now` flag is used, it also starts the service
 
 For other commands like `start`, `stop`, etc., it translates them to the appropriate `rc-service` commands.
+
+## Features
+
+- **Service Conversion**: Converts systemd service files to OpenRC init scripts
+- **ExecStop Support**: Properly handles custom stop commands from systemd services
+- **Reload Support**: Implements service reloading via SIGHUP
+- **Multiple Service Management**: Enable or disable multiple services with a single command
+- **Smart Listing**: Shows all systemd services and enabled OpenRC services by default, with an option to show all services
+- **Existing Service Detection**: Works with existing OpenRC services even without systemd service files
 
 ## Limitations
 

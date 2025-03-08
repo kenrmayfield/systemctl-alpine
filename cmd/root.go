@@ -14,6 +14,7 @@ var (
 	}
 
 	nowFlag bool
+	allFlag bool
 )
 
 var rootCmd = &cobra.Command{
