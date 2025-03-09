@@ -8,7 +8,9 @@ command_user="{{.User}}{{if .Group}}:{{.Group}}{{end}}"
 {{if .WorkingDirectory}}
 directory="{{.WorkingDirectory}}"
 {{end}}
-command_background="yes"
+{{if .CommandBackground}}
+command_background=true
+{{end}}
 
 command="{{.Command}}"
 {{if .CommandArgs}}
@@ -34,7 +36,7 @@ export {{.}}
 
 depend() {
     need net
-#    after firewall
+    after firewall
 }
 
 start_pre() {

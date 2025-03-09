@@ -29,6 +29,7 @@ type TemplateData struct {
 	CommandArgs          string
 	StopCommand          string
 	Capabilities         string
+	CommandBackground    bool
 }
 
 // ConvertToOpenRC converts a systemd service to an OpenRC init script
@@ -79,6 +80,13 @@ func ConvertToOpenRC(config *parser.ServiceConfig, serviceName string) (string, 
 		capabilities = strings.Join(formattedCaps, ",")
 	}
 
+	// Determine if command should run in background based on Type
+	commandBackground := true
+	if config.Type == "forking" {
+		commandBackground = false
+	}
+	// For Type=simple, Type=notify, or no Type specified, keep commandBackground=true
+
 	// Prepare template data
 	data := TemplateData{
 		Name:                 serviceName,
@@ -93,6 +101,7 @@ func ConvertToOpenRC(config *parser.ServiceConfig, serviceName string) (string, 
 		CommandArgs:          commandArgs,
 		StopCommand:          stopCommand,
 		Capabilities:         capabilities,
+		CommandBackground:    commandBackground,
 	}
 
 	// Create template

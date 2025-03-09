@@ -25,6 +25,7 @@ type ServiceConfig struct {
 	RestartSec          string
 	WantedBy            string
 	AmbientCapabilities string
+	Type                string
 }
 
 // ParseServiceFile parses a systemd service file and returns a ServiceConfig
@@ -103,6 +104,8 @@ func ParseServiceFile(path string) (*ServiceConfig, error) {
 				config.RestartSec = value
 			case "AmbientCapabilities":
 				config.AmbientCapabilities = value
+			case "Type":
+				config.Type = value
 			}
 		case "Install":
 			if key == "WantedBy" {

@@ -217,6 +217,43 @@ For other commands like `start`, `stop`, etc., it translates them to the appropr
 - **Multiple Service Management**: Enable or disable multiple services with a single command
 - **Smart Listing**: Shows all systemd services and enabled OpenRC services by default, with an option to show all services
 - **Existing Service Detection**: Works with existing OpenRC services even without systemd service files
+- **Service Type Support**: Handles different systemd service types (simple, forking, notify)
+- **Capabilities Support**: Converts systemd AmbientCapabilities to OpenRC capabilities
+
+### Supported Systemd Service Directives
+
+The following systemd service directives are supported in the conversion process:
+
+| Systemd Directive | OpenRC Equivalent | Notes |
+|-------------------|-------------------|-------|
+| Description | description | Service description |
+| User | command_user | User to run the service as |
+| Group | command_user | Group to run the service as (combined with User) |
+| WorkingDirectory | directory | Directory to run the service in |
+| EnvironmentFile | Sourced in script | Environment file for the service |
+| Environment | export statements | Environment variables |
+| ExecStartPre | start_pre() | Commands to run before starting the service |
+| ExecStart | command/command_args | Main service command |
+| ExecStop | stop() | Custom stop command |
+| Type | command_background | Affects whether service runs in background |
+| AmbientCapabilities | capabilities | Linux capabilities for the service |
+
+#### Service Type Handling
+
+- `Type=simple` or `Type=notify` (or no Type): Sets `command_background=true` in OpenRC
+- `Type=forking`: Omits `command_background` as the service handles its own daemonization
+
+#### Capabilities Handling
+
+Systemd's space-separated capabilities list is converted to OpenRC's comma-separated format with the `^` prefix:
+
+```
+# Systemd
+AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_SYS_TIME
+
+# Converted to OpenRC
+capabilities="^cap_net_bind_service,^cap_sys_time"
+```
 
 ## Limitations
 
