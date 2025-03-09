@@ -28,6 +28,7 @@ type TemplateData struct {
 	Command              string
 	CommandArgs          string
 	StopCommand          string
+	Capabilities         string
 }
 
 // ConvertToOpenRC converts a systemd service to an OpenRC init script
@@ -63,6 +64,21 @@ func ConvertToOpenRC(config *parser.ServiceConfig, serviceName string) (string, 
 		stopCommand = config.ExecStop
 	}
 
+	// Process AmbientCapabilities if present
+	var capabilities string
+	if config.AmbientCapabilities != "" {
+		// Split space-separated capabilities
+		caps := strings.Fields(config.AmbientCapabilities)
+
+		// Convert to OpenRC format (comma-separated with ^ prefix)
+		var formattedCaps []string
+		for _, c := range caps {
+			formattedCaps = append(formattedCaps, "^"+strings.ToLower(c))
+		}
+
+		capabilities = strings.Join(formattedCaps, ",")
+	}
+
 	// Prepare template data
 	data := TemplateData{
 		Name:                 serviceName,
@@ -76,6 +92,7 @@ func ConvertToOpenRC(config *parser.ServiceConfig, serviceName string) (string, 
 		Command:              command,
 		CommandArgs:          commandArgs,
 		StopCommand:          stopCommand,
+		Capabilities:         capabilities,
 	}
 
 	// Create template
@@ -90,7 +107,8 @@ func ConvertToOpenRC(config *parser.ServiceConfig, serviceName string) (string, 
 		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
 
-	return output.String(), nil
+	// Post-process the output to remove multiple empty lines
+	return removeEmptyLines(output.String()), nil
 }
 
 // WriteOpenRCScript writes the OpenRC init script to the appropriate location
@@ -117,4 +135,34 @@ func EnableService(serviceName string) error {
 	}
 
 	return nil
+}
+
+// removeEmptyLines removes multiple consecutive empty lines and trims space
+func removeEmptyLines(input string) string {
+	// Split into lines
+	lines := strings.Split(input, "\n")
+
+	var result []string
+	var prevEmpty bool
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		isEmpty := trimmed == ""
+
+		// Keep the line if:
+		// 1. It's not empty, or
+		// 2. It's empty but the previous line wasn't empty
+		if !isEmpty || !prevEmpty {
+			// If it's a non-empty line, keep original indentation
+			if !isEmpty {
+				result = append(result, line)
+			} else {
+				result = append(result, "")
+			}
+		}
+		prevEmpty = isEmpty
+	}
+
+	// Join lines and trim any leading/trailing whitespace
+	return strings.TrimSpace(strings.Join(result, "\n")) + "\n"
 }

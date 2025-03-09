@@ -12,18 +12,19 @@ import (
 
 // ServiceConfig represents a parsed systemd service file
 type ServiceConfig struct {
-	Description      string
-	User             string
-	Group            string
-	WorkingDirectory string
-	EnvironmentFile  string
-	Environment      []string
-	ExecStartPre     []string
-	ExecStart        string
-	ExecStop         string
-	Restart          string
-	RestartSec       string
-	WantedBy         string
+	Description         string
+	User                string
+	Group               string
+	WorkingDirectory    string
+	EnvironmentFile     string
+	Environment         []string
+	ExecStartPre        []string
+	ExecStart           string
+	ExecStop            string
+	Restart             string
+	RestartSec          string
+	WantedBy            string
+	AmbientCapabilities string
 }
 
 // ParseServiceFile parses a systemd service file and returns a ServiceConfig
@@ -100,6 +101,8 @@ func ParseServiceFile(path string) (*ServiceConfig, error) {
 				config.Restart = value
 			case "RestartSec":
 				config.RestartSec = value
+			case "AmbientCapabilities":
+				config.AmbientCapabilities = value
 			}
 		case "Install":
 			if key == "WantedBy" {

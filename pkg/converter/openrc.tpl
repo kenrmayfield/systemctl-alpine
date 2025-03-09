@@ -17,6 +17,10 @@ command_args="{{.CommandArgs}}"
 
 pidfile="/run/$name/$name.pid"
 
+{{if .Capabilities}}
+capabilities="{{.Capabilities}}"
+{{end}}
+
 {{if .EnvironmentFile}}
 # Source environment file if it exists
 if [ -f "{{.EnvironmentFile}}" ]; then
@@ -30,7 +34,7 @@ export {{.}}
 
 depend() {
     need net
-    after firewall
+#    after firewall
 }
 
 start_pre() {
