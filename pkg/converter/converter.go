@@ -30,6 +30,7 @@ type TemplateData struct {
 	StopCommand          string
 	Capabilities         string
 	CommandBackground    bool
+	SourcePath           string
 }
 
 // ConvertToOpenRC converts a systemd service to an OpenRC init script
@@ -102,6 +103,7 @@ func ConvertToOpenRC(config *parser.ServiceConfig, serviceName string) (string, 
 		StopCommand:          stopCommand,
 		Capabilities:         capabilities,
 		CommandBackground:    commandBackground,
+		SourcePath:           config.SourcePath,
 	}
 
 	// Create template

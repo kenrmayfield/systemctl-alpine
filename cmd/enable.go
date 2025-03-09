@@ -63,6 +63,55 @@ func enableService(serviceName string) error {
 		}
 	}
 
+	// If OpenRC service exists, check if it has been modified
+	if openrcExists {
+		content, err := os.ReadFile(openrcPath)
+		if err != nil {
+			return fmt.Errorf("failed to read service file: %w", err)
+		}
+
+		// Check for modification comment
+		if strings.Contains(string(content), "# Modified by systemctl edit") && !forceFlag {
+			fmt.Printf("Service %s has been manually modified. Use --force to overwrite.\n", openrcName)
+
+			// If systemd service file not found, just enable the existing OpenRC service
+			if !found {
+				// Enable the service
+				if err := converter.EnableService(openrcName); err != nil {
+					return err
+				}
+
+				fmt.Printf("Service %s has been enabled\n", openrcName)
+
+				// Start the service if --now flag is provided
+				if nowFlag {
+					if err := executeServiceCommand(openrcName, "start"); err != nil {
+						return fmt.Errorf("failed to start service: %w", err)
+					}
+				}
+
+				return nil
+			}
+
+			// If systemd service file found but we're not forcing, just enable without converting
+			fmt.Printf("Skipping conversion due to manual modifications. Enabling existing service.\n")
+			if err := converter.EnableService(openrcName); err != nil {
+				return err
+			}
+
+			fmt.Printf("Service %s has been enabled\n", openrcName)
+
+			// Start the service if --now flag is provided
+			if nowFlag {
+				if err := executeServiceCommand(openrcName, "start"); err != nil {
+					return fmt.Errorf("failed to start service: %w", err)
+				}
+			}
+
+			return nil
+		}
+	}
+
 	// If neither systemd nor OpenRC service exists, return an error
 	if !found && !openrcExists {
 		return fmt.Errorf("service file not found for %s", serviceFileName)
@@ -128,4 +177,5 @@ func enableService(serviceName string) error {
 func init() {
 	rootCmd.AddCommand(enableCmd)
 	enableCmd.Flags().BoolVar(&nowFlag, "now", false, "Start the service after enabling it")
+	enableCmd.Flags().BoolVarP(&forceFlag, "force", "f", false, "Force overwrite of manually modified service files")
 }

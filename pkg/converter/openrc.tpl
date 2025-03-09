@@ -1,4 +1,7 @@
 #!/sbin/openrc-run
+{{if .SourcePath}}
+# Converted from systemd service: {{.SourcePath}}
+{{end}}
 
 name="{{.Name}}"
 description="{{.Description}}"

@@ -13,8 +13,9 @@ var (
 		"/etc/systemd/system",
 	}
 
-	nowFlag bool
-	allFlag bool
+	nowFlag   bool
+	allFlag   bool
+	forceFlag bool
 )
 
 var rootCmd = &cobra.Command{

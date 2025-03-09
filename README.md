@@ -14,6 +14,7 @@ A CLI tool that helps you manage services on Alpine Linux by translating systemd
 - Enable and disable services
 - Start, stop, restart, and check the status of services
 - List all available services and their status
+- Edit OpenRC service scripts with modification tracking
 
 This tool is particularly useful for:
 - Docker container images transitioning from systemd-based distributions to Alpine Linux
@@ -65,6 +66,7 @@ Available Commands:
   completion    Generate the autocompletion script for the specified shell
   daemon-reload Reload systemd manager configuration (not needed in OpenRC)
   disable       Disable one or more services from starting at boot
+  edit          Edit an OpenRC service script
   enable        Enable one or more services to start at boot
   help          Help about any command
   is-enabled    Check if a service is enabled to start at boot
@@ -91,6 +93,12 @@ Enable and start a service
 
 ```bash
 systemctl enable --now nginx
+```
+
+Force enable a service (overwrite manually modified service files)
+
+```bash
+systemctl enable --force nginx
 ```
 
 Start a service
@@ -139,6 +147,12 @@ Check if a service is enabled
 
 ```bash
 systemctl is-enabled nginx
+```
+
+Edit a service script
+
+```bash
+systemctl edit nginx
 ```
 
 List services
@@ -209,6 +223,23 @@ When you run `systemctl enable some-service`:
 
 For other commands like `start`, `stop`, etc., it translates them to the appropriate `rc-service` commands.
 
+### Editing and Modification Protection
+
+When you run `systemctl edit some-service`:
+
+1. The tool opens the OpenRC service script in an editor (using `$EDITOR`, `vi`, `nano`, or `ed`)
+2. After editing, it adds a modification comment with a timestamp to track changes
+3. If you edit the file again, it updates the timestamp to reflect the most recent edit
+
+When you run `systemctl enable some-service` on a service that has been manually edited:
+
+1. The tool detects the modification comment and avoids overwriting your changes
+2. It notifies you that the service has been manually modified
+3. It enables the existing service without converting it again
+4. If you want to force a conversion, you can use the `--force` flag
+
+This protection ensures that your manual customizations to service scripts are preserved.
+
 ## Features
 
 - **Service Conversion**: Converts systemd service files to OpenRC init scripts
@@ -219,6 +250,8 @@ For other commands like `start`, `stop`, etc., it translates them to the appropr
 - **Existing Service Detection**: Works with existing OpenRC services even without systemd service files
 - **Service Type Support**: Handles different systemd service types (simple, forking, notify)
 - **Capabilities Support**: Converts systemd AmbientCapabilities to OpenRC capabilities
+- **Edit Command**: Edit OpenRC service scripts with your preferred editor
+- **Modification Protection**: Prevents automatic overwriting of manually edited service scripts
 
 ### Supported Systemd Service Directives
 

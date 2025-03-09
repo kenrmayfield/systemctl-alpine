@@ -26,6 +26,7 @@ type ServiceConfig struct {
 	WantedBy            string
 	AmbientCapabilities string
 	Type                string
+	SourcePath          string
 }
 
 // ParseServiceFile parses a systemd service file and returns a ServiceConfig
@@ -39,7 +40,9 @@ func ParseServiceFile(path string) (*ServiceConfig, error) {
 	name := filepath.Base(path)
 	name = util.NormalizeServiceName(name)
 
-	config := &ServiceConfig{}
+	config := &ServiceConfig{
+		SourcePath: path,
+	}
 	scanner := bufio.NewScanner(file)
 
 	var section string
