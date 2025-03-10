@@ -31,10 +31,11 @@ type TemplateData struct {
 	Capabilities         string
 	CommandBackground    bool
 	SourcePath           string
+	InstanceName         string
 }
 
 // ConvertToOpenRC converts a systemd service to an OpenRC init script
-func ConvertToOpenRC(config *parser.ServiceConfig, serviceName string) (string, error) {
+func ConvertToOpenRC(config *parser.ServiceConfig, serviceName string, instanceName string) (string, error) {
 	// Split ExecStart into command and arguments
 	execParts := strings.Fields(config.ExecStart)
 	if len(execParts) == 0 {
@@ -104,6 +105,7 @@ func ConvertToOpenRC(config *parser.ServiceConfig, serviceName string) (string, 
 		Capabilities:         capabilities,
 		CommandBackground:    commandBackground,
 		SourcePath:           config.SourcePath,
+		InstanceName:         instanceName,
 	}
 
 	// Create template

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"systemctl-alpine/pkg/util"
@@ -30,7 +31,7 @@ type ServiceConfig struct {
 }
 
 // ParseServiceFile parses a systemd service file and returns a ServiceConfig
-func ParseServiceFile(path string) (*ServiceConfig, error) {
+func ParseServiceFile(path string, instanceName string) (*ServiceConfig, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open service file: %w", err)
@@ -69,6 +70,11 @@ func ParseServiceFile(path string) (*ServiceConfig, error) {
 
 		key := strings.TrimSpace(parts[0])
 		value := strings.TrimSpace(parts[1])
+
+		// Process template substitutions if this is a template unit
+		if instanceName != "" {
+			value = ProcessTemplateSubstitutions(value, name, instanceName)
+		}
 
 		switch section {
 		case "Unit":
@@ -122,4 +128,72 @@ func ParseServiceFile(path string) (*ServiceConfig, error) {
 	}
 
 	return config, nil
+}
+
+// ProcessTemplateSubstitutions replaces template specifiers in a string with their values
+func ProcessTemplateSubstitutions(input string, unitName string, instanceName string) string {
+	// Extract prefix (part before @)
+	var prefix string
+	if strings.Contains(unitName, "@") {
+		prefix = strings.Split(unitName, "@")[0]
+	} else {
+		prefix = unitName
+	}
+
+	// Get system information for substitutions
+	hostname, _ := os.Hostname()
+	shortHostname := strings.Split(hostname, ".")[0]
+
+	// Get architecture
+	arch := runtime.GOARCH
+	switch arch {
+	case "arm64":
+		arch = "aarch64"
+	case "amd64":
+		arch = "x86_64"
+	case "386":
+		arch = "x86"
+	}
+
+	// Get machine ID if available
+	machineID := ""
+	if data, err := os.ReadFile("/etc/machine-id"); err == nil {
+		machineID = strings.TrimSpace(string(data))
+	}
+
+	// Get OS ID if available
+	osID := ""
+	if data, err := os.ReadFile("/etc/os-release"); err == nil {
+		for _, line := range strings.Split(string(data), "\n") {
+			if strings.HasPrefix(line, "ID=") {
+				osID = strings.Trim(strings.TrimPrefix(line, "ID="), "\"")
+				break
+			}
+		}
+	}
+
+	// Perform substitutions
+	result := input
+	result = strings.ReplaceAll(result, "%%", "%%PLACEHOLDER%%")
+	result = strings.ReplaceAll(result, "%a", arch)
+	result = strings.ReplaceAll(result, "%i", instanceName)
+	result = strings.ReplaceAll(result, "%I", unescapeValue(instanceName))
+	result = strings.ReplaceAll(result, "%l", shortHostname)
+	result = strings.ReplaceAll(result, "%m", machineID)
+	result = strings.ReplaceAll(result, "%n", unitName)
+	result = strings.ReplaceAll(result, "%N", strings.TrimSuffix(unitName, ".service"))
+	result = strings.ReplaceAll(result, "%o", osID)
+	result = strings.ReplaceAll(result, "%p", prefix)
+	result = strings.ReplaceAll(result, "%P", unescapeValue(prefix))
+	result = strings.ReplaceAll(result, "%%PLACEHOLDER%%", "%")
+
+	return result
+}
+
+// unescapeValue undoes systemd escaping
+func unescapeValue(value string) string {
+	// Systemd escaping rules: replace "-" with "/", "\x2d" with "-"
+	result := strings.ReplaceAll(value, "-", "/")
+	result = strings.ReplaceAll(result, "\\x2d", "-")
+	return result
 }

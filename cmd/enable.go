@@ -35,12 +35,28 @@ Example:
 }
 
 func enableService(serviceName string) error {
-	// If the service name doesn't end with .service, add it
-	serviceFileName := util.NormalizeServiceName(serviceName)
-	if !strings.HasSuffix(serviceFileName, ".service") {
-		serviceFileName = serviceFileName + ".service"
+	// Check if this is a template service (contains @)
+	var templateName string
+	var instanceName string
+
+	if strings.Contains(serviceName, "@") {
+		parts := strings.SplitN(serviceName, "@", 2)
+		templateName = parts[0] + "@"
+		instanceName = parts[1]
+
+		// If the service name doesn't end with .service, add it for the template
+		if !strings.HasSuffix(templateName, ".service") {
+			templateName = templateName + ".service"
+		}
+	} else {
+		// If the service name doesn't end with .service, add it
+		templateName = util.NormalizeServiceName(serviceName)
+		if !strings.HasSuffix(templateName, ".service") {
+			templateName = templateName + ".service"
+		}
 	}
 
+	// The OpenRC service name will include the instance name if provided
 	openrcName := util.NormalizeServiceName(serviceName)
 
 	// Check if the OpenRC service already exists
@@ -50,12 +66,12 @@ func enableService(serviceName string) error {
 		openrcExists = true
 	}
 
-	// Look for the systemd service file
+	// Look for the systemd service file (using the template name)
 	var serviceFile string
 	var found bool
 
 	for _, location := range serviceLocations {
-		path := filepath.Join(location, serviceFileName)
+		path := filepath.Join(location, templateName)
 		if _, err := os.Stat(path); err == nil {
 			serviceFile = path
 			found = true
@@ -114,7 +130,7 @@ func enableService(serviceName string) error {
 
 	// If neither systemd nor OpenRC service exists, return an error
 	if !found && !openrcExists {
-		return fmt.Errorf("service file not found for %s", serviceFileName)
+		return fmt.Errorf("service file not found for %s", templateName)
 	}
 
 	// If systemd service file not found but OpenRC service exists, just enable the OpenRC service
@@ -138,13 +154,13 @@ func enableService(serviceName string) error {
 		return nil
 	} else {
 		// Parse the service file
-		config, err := parser.ParseServiceFile(serviceFile)
+		config, err := parser.ParseServiceFile(serviceFile, instanceName)
 		if err != nil {
 			return fmt.Errorf("failed to parse service file: %w", err)
 		}
 
 		// Convert to OpenRC
-		script, err := converter.ConvertToOpenRC(config, openrcName)
+		script, err := converter.ConvertToOpenRC(config, openrcName, instanceName)
 		if err != nil {
 			return fmt.Errorf("failed to convert to OpenRC: %w", err)
 		}

@@ -15,6 +15,7 @@ A CLI tool that helps you manage services on Alpine Linux by translating systemd
 - Start, stop, restart, and check the status of services
 - List all available services and their status
 - Edit OpenRC service scripts with modification tracking
+- Work with template services (e.g., `nginx@.service`)
 
 This tool is particularly useful for:
 - Docker container images transitioning from systemd-based distributions to Alpine Linux
@@ -87,6 +88,12 @@ Enable a service (converts systemd service file to OpenRC and enables it)
 
 ```bash
 systemctl enable nginx
+```
+
+Enable a template service with an instance name
+
+```bash
+systemctl enable nginx@user1
 ```
 
 Enable and start a service
@@ -221,6 +228,12 @@ When you run `systemctl enable some-service`:
 4. It enables the service using `rc-update add some-service default`
 5. If the `--now` flag is used, it also starts the service
 
+For template services like `nginx@.service`, when you run `systemctl enable nginx@user1`:
+
+1. The tool looks for the template service file `nginx@.service`
+2. It processes the template, substituting variables like `%i` with the instance name `user1`
+3. It creates an OpenRC service script named `nginx@user1` with the instance name available as an environment variable
+
 For other commands like `start`, `stop`, etc., it translates them to the appropriate `rc-service` commands.
 
 ### Editing and Modification Protection
@@ -252,6 +265,7 @@ This protection ensures that your manual customizations to service scripts are p
 - **Capabilities Support**: Converts systemd AmbientCapabilities to OpenRC capabilities
 - **Edit Command**: Edit OpenRC service scripts with your preferred editor
 - **Modification Protection**: Prevents automatic overwriting of manually edited service scripts
+- **Template Services**: Supports systemd template services with instance names and variable substitution
 
 ### Supported Systemd Service Directives
 
@@ -287,6 +301,26 @@ AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_SYS_TIME
 # Converted to OpenRC
 capabilities="^cap_net_bind_service,^cap_sys_time"
 ```
+
+#### Template Service Substitutions
+
+When processing template services, the following systemd specifiers are supported:
+
+| Specifier | Description | Example |
+|-----------|-------------|---------|
+| `%i` | Instance name | For `nginx@user1`, this is `user1` |
+| `%I` | Unescaped instance name | Same as `%i` but with systemd escaping undone |
+| `%p` | Prefix name | For `nginx@user1`, this is `nginx` |
+| `%P` | Unescaped prefix name | Same as `%p` but with systemd escaping undone |
+| `%n` | Full unit name | For `nginx@user1`, this is `nginx@user1.service` |
+| `%N` | Unit name without type suffix | For `nginx@user1.service`, this is `nginx@user1` |
+| `%a` | Architecture | `x86_64`, `aarch64`, etc. |
+| `%l` | Short hostname | Hostname without domain part |
+| `%m` | Machine ID | Contents of `/etc/machine-id` |
+| `%o` | Operating system ID | From `/etc/os-release`, e.g., `alpine` |
+| `%%` | Percent sign | Literal `%` character |
+
+The instance name is also made available as the `INSTANCE` environment variable in the OpenRC script.
 
 ## Limitations
 

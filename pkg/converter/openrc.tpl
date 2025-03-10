@@ -3,7 +3,23 @@
 # Converted from systemd service: {{.SourcePath}}
 {{end}}
 
-name="{{.Name}}"
+{{if .InstanceName}}
+# Instance name from template
+export INSTANCE="{{.InstanceName}}"
+{{end}}
+
+{{if .EnvironmentFile}}
+# Source environment file if it exists
+if [ -f "{{.EnvironmentFile}}" ]; then
+	export $(grep -v '^#' "{{.EnvironmentFile}}" | xargs)
+fi
+{{end}}
+
+{{range .Environment}}
+export {{.}}
+{{end}}
+
+name="${RC_SVCNAME:-{{.Name}}}"
 description="{{.Description}}"
 {{if .User}}
 command_user="{{.User}}{{if .Group}}:{{.Group}}{{end}}"
@@ -24,17 +40,6 @@ pidfile="/run/$name/$name.pid"
 
 {{if .Capabilities}}
 capabilities="{{.Capabilities}}"
-{{end}}
-
-{{if .EnvironmentFile}}
-# Source environment file if it exists
-if [ -f "{{.EnvironmentFile}}" ]; then
-	export $(grep -v '^#' "{{.EnvironmentFile}}" | xargs)
-fi
-{{end}}
-
-{{range .Environment}}
-export {{.}}
 {{end}}
 
 depend() {

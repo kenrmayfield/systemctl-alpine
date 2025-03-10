@@ -9,8 +9,8 @@ var (
 
 	// Locations to search for systemd service files
 	serviceLocations = []string{
-		"/lib/systemd/system",
 		"/etc/systemd/system",
+		"/lib/systemd/system",
 	}
 
 	nowFlag   bool
