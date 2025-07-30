@@ -41,11 +41,11 @@ cd systemctl-alpine
 
 Build the binary
 
+##### NOTE: Requires go >= 1.24.1
+
 ```bash
 go build -o systemctl-alpine
 ```
-#### NOTE: Requires go >= 1.24.1
-
 Install it to your PATH
 
 ```bash
