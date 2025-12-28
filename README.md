@@ -13,7 +13,9 @@ A CLI tool that helps you manage services on Alpine Linux by translating systemd
 - Convert systemd service files to OpenRC init scripts
 - Enable and disable services
 - Start, stop, restart, and check the status of services
-- List all available services and their status
+- Check if services are active and view their detailed properties
+- List all available services and their status (both enabled and installed)
+- Query service states and properties in a systemd-compatible way
 - Edit OpenRC service scripts with modification tracking
 - Work with template services (e.g., `nginx@.service`)
 
@@ -64,19 +66,23 @@ Usage:
   systemctl [command]
 
 Available Commands:
-  completion    Generate the autocompletion script for the specified shell
-  daemon-reload Reload systemd manager configuration (not needed in OpenRC)
-  disable       Disable one or more services from starting at boot
-  edit          Edit an OpenRC service script
-  enable        Enable one or more services to start at boot
-  help          Help about any command
-  is-enabled    Check if a service is enabled to start at boot
-  list          List all systemd services and their OpenRC status
-  reload        Reload a service
-  restart       Restart a service
-  start         Start a service
-  status        Check the status of a service
-  stop          Stop a service
+  completion      Generate the autocompletion script for the specified shell
+  daemon-reload   Reload systemd manager configuration (not needed in OpenRC)
+  disable         Disable one or more services from starting at boot
+  edit            Edit an OpenRC service script
+  enable          Enable one or more services to start at boot
+  help            Help about any command
+  is-active       Check if a service is currently active (running)
+  is-enabled      Check if a service is enabled to start at boot
+  list            List all systemd services and their OpenRC status
+  list-unit-files List all installed unit files and their enablement state
+  list-units      List loaded systemd units
+  reload          Reload a service
+  restart         Restart a service
+  show            Show properties of a service or the service manager
+  start           Start a service
+  status          Check the status of a service
+  stop            Stop a service
 
 Flags:
   -h, --help   help for systemctl
@@ -156,6 +162,32 @@ Check if a service is enabled
 systemctl is-enabled nginx
 ```
 
+Check if a service is currently active (running)
+
+```bash
+systemctl is-active nginx
+```
+
+Show service properties
+
+```bash
+systemctl show nginx
+```
+
+Show specific properties of a service
+
+```bash
+systemctl show nginx -p ActiveState
+systemctl show nginx --property=UnitFileState --property=Type
+systemctl show nginx --property=ActiveState --value
+```
+
+Show systemd manager properties
+
+```bash
+systemctl show
+```
+
 Edit a service script
 
 ```bash
@@ -178,6 +210,45 @@ nginx                          enabled
 redis                          enabled (from /lib/systemd/system/redis.service)
 mysql                          disabled
 apache2                        disabled (not converted)
+```
+
+List unit files
+
+```bash
+# List all installed unit files with their enablement state
+systemctl list-unit-files
+
+# List only enabled service unit files
+systemctl list-unit-files --type=service --state=enabled
+
+# The output shows each unit file and its state
+UNIT FILE                          STATE
+nginx.service                      enabled
+redis.service                      enabled
+mysql.service                      disabled
+custom.service                     static
+```
+
+List units
+
+```bash
+# List all active and enabled units
+systemctl list-units
+
+# List all units including inactive ones
+systemctl list-units --all
+
+# List only failed units
+systemctl list-units --state=failed
+
+# List only running services
+systemctl list-units --type=service --state=running
+
+# The output shows detailed status of each unit
+UNIT                    LOAD      ACTIVE    SUB       DESCRIPTION
+nginx.service           loaded    active    running   nginx web server
+redis.service           loaded    active    running   Redis data structure store
+mysql.service           loaded    inactive  dead      MySQL database server
 ```
 
 ### Working with Multiple Services
@@ -260,12 +331,16 @@ This protection ensures that your manual customizations to service scripts are p
 - **Reload Support**: Implements service reloading via SIGHUP
 - **Multiple Service Management**: Enable or disable multiple services with a single command
 - **Smart Listing**: Shows all systemd services and enabled OpenRC services by default, with an option to show all services
+- **Service State Querying**: Check if services are active or view their detailed properties (`is-active`, `show`)
+- **Unit File Inspection**: List all installed unit files with their enablement state (`list-unit-files`)
+- **Unit Listing**: Display loaded and active units with comprehensive status information (`list-units`)
 - **Existing Service Detection**: Works with existing OpenRC services even without systemd service files
 - **Service Type Support**: Handles different systemd service types (simple, forking, notify)
 - **Capabilities Support**: Converts systemd AmbientCapabilities to OpenRC capabilities
 - **Edit Command**: Edit OpenRC service scripts with your preferred editor
 - **Modification Protection**: Prevents automatic overwriting of manually edited service scripts
 - **Template Services**: Supports systemd template services with instance names and variable substitution
+- **Property Inspection**: View service properties in systemd-compatible key=value format with filtering options
 
 ### Supported Systemd Service Directives
 
